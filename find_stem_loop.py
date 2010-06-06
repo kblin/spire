@@ -43,13 +43,28 @@ def can_pair(base_a, base_b):
         return False
 
 def find_stem_loop(seq, stem_length=5, loop_length=5, loop_fuzzy=1, max_miss=0):
-    """look for stem loops in a sequence"""
+    """(seq, stem_length, loop_length, loop_fuzzy, max_miss)->loop list
+
+    look for stem loops in a sequence.
+    seq             is the sequence string to search
+    stem_length     is the length of the stem in base pairs
+    loop_length     is the length of the loop in bases
+    loop_fuzzy      is the possible additional loop length
+    max_miss        is the maximum number of allowed mismatches in the stem
+
+    The function returns a list of stem loops, where a stem loop is a triple of
+    (stem_start_position, stem_stop_position, stem_loop_sequence_string)
+
+    If the sequence is too short to fold to a stem loop with the given
+    parameters, a SeqTooShortException will be raised.
+
+    """
     #pylint: disable-msg=R0914
     seq_len = len(seq)
     seq_offset = (stem_length * 2) + loop_length + loop_fuzzy
     if seq_len < seq_offset:
-        print >> sys.stderr, "seq_len is %s, seq_offset is %s" % (seq_len,
-                                                                  seq_offset)
+        #print >> sys.stderr, "seq_len is %s, seq_offset is %s" % (seq_len,
+        #                                                          seq_offset)
         raise SeqTooShortException
     stem_loops = []
 
