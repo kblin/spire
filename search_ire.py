@@ -27,12 +27,12 @@ Output will go to stdout, with some diagnostics printed to stderr.
 """
 
 import re
-import os
 import sys
+import subprocess
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import IUPAC
-from run_blast import run_blast
+from Bio.Blast import NCBIXML
 
 FORWARD_PATTERN = '(C|A).....(CAGUG|CAAUG|GAGAG|UAGUA|CAGCG|CUGUG|CCGUG)'
 REVERSE_PATTERN = '(CACGG|CACAG|CACUG|CAUUG|CUCUC|UACUA|CGCUG).....(G|U)'
@@ -429,20 +429,30 @@ def create_pretty_fold_grap(match_list):
 
 def run_blastn(match, blastdb):
     """run blastn"""
+    from Bio.Blast.Applications import NcbiblastnCommandline
     for feature in match.features:
-        done = False
-        retries = 3
+        print >> sys.stderr, ".",
         rec = None
-        while not done and retries > 0:
-            try:
-                rec = run_blast(feature.feature_fasta(), blastdb, "blastn")
-                done = True
-            except ValueError:
-                print >> sys.stderr, "running blastn failed"
-                retries -= 1
-                continue
+        try:
+            cline = NcbiblastnCommandline(db=blastdb, outfmt=5, num_threads=4)
+            pipe = subprocess.Popen(str(cline), shell=True,
+                                    stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            pipe.stdin.write(feature.feature_fasta())
+            pipe.stdin.close()
+            recs = NCBIXML.parse(pipe.stdout)
+            rec = recs.next()
+            pipe.stdout.close()
+            pipe.stderr.close()
+        except OSError, err:
+            print >> sys.stderr, "Failed to run blastp: %s" % err
+            continue
+        except ValueError, err:
+            print >> sys.stderr, "Parsing blast output failed: %s" % err
+            continue
         if not rec:
-            return
+            continue
         for aln in rec.alignments:
             for hsp in aln.hsps:
                 if hsp.expect < E_VAL_THRESH:
@@ -451,23 +461,33 @@ def run_blastn(match, blastdb):
 
 def run_blastp(match, blastdb):
     """run blastp"""
+    from Bio.Blast.Applications import NcbiblastpCommandline
     for feature in match.features:
-        done = False
-        retries = 3
+        print >> sys.stderr, ".",
         rec = None
         fasta = feature.protein_fasta()
         if fasta == "":
-            return
-        while not done and retries > 0:
-            try:
-                rec = run_blast(fasta, blastdb, "blastp")
-                done = True
-            except ValueError:
-                print >> sys.stderr, "running blastp failed"
-                retries -= 1
-                continue
+            continue
+        try:
+            cline = NcbiblastpCommandline(db=blastdb, outfmt=5, num_threads=4)
+            pipe = subprocess.Popen(str(cline), shell=True,
+                                    stdin=subprocess.PIPE,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            pipe.stdin.write(fasta)
+            pipe.stdin.close()
+            recs = NCBIXML.parse(pipe.stdout)
+            rec = recs.next()
+            pipe.stdout.close()
+            pipe.stderr.close()
+        except OSError, err:
+            print >> sys.stderr, "Failed to run blastp: %s" % err
+            continue
+        except ValueError, err:
+            print >> sys.stderr, "Parsing blast output failed: %s" % err
+            continue
         if not rec:
-            return
+            continue
         for aln in rec.alignments:
             for hsp in aln.hsps:
                 if hsp.expect < E_VAL_THRESH:
@@ -478,7 +498,7 @@ def run_blastp(match, blastdb):
 def blast(match_list, blastdb):
     """run blast searches"""
     for match in match_list:
-        #run_blastn(match, blastdb)
+        run_blastn(match, blastdb)
         run_blastp(match, blastdb)
 
 def filter_align(match_list):
