@@ -19,108 +19,82 @@
 #
 
 import sys
+from nose.tools import *
+
 sys.path.append('.')
 sys.path.append('..')
 from find_stem_loop import *
 
-successes = 0
-failures = 0
-total = 0
+def test_can_pair():
+    assert_true(can_pair("A", "U"), "Failed to pair A/U")
+    assert_true(can_pair("U", "A"), "Failed to pair U/A")
+    assert_true(can_pair("C", "G"), "Failed to pair C/G")
+    assert_true(can_pair("G", "C"), "Failed to pair G/C")
+    assert_true(can_pair("G", "U"), "Failed to pair G/U")
+    assert_true(can_pair("U", "G"), "Failed to pair U/G")
+    assert_false(can_pair("A", "A"), "Erroneously paired A/A")
+    assert_false(can_pair("C", "C"), "Erroneously paired C/C")
+    assert_false(can_pair("G", "G"), "Erroneously paired G/G")
+    assert_false(can_pair("U", "U"), "Erroneously paired U/U")
+    assert_false(can_pair("A", "C"), "Erroneously paired A/C")
+    assert_false(can_pair("C", "A"), "Erroneously paired C/A")
+    assert_false(can_pair("C", "U"), "Erroneously paired C/U")
+    assert_false(can_pair("U", "C"), "Erroneously paired U/C")
 
-def test_can_pair(name):
-    if not can_pair("A", "U"):
-        return False
-    if not can_pair("U", "A"):
-        return False
-    if not can_pair("C", "G"):
-        return False
-    if not can_pair("G", "C"):
-        return False
-    if not can_pair("G", "U"):
-        return False
-    if not can_pair("U", "G"):
-        return False
-    if can_pair("A", "C"):
-        return False
-    if can_pair("C", "A"):
-        return False
-    if can_pair("C", "U"):
-        return False
-    if can_pair("U", "C"):
-        return False
-    return True
+def test_find_stem_loop():
+    ###
+    ### Simple tests
+    ###
 
-def test_find_stem_loop(name):
     seq = "ATGC"
-    got_exception = False
-    try:
-        results = find_stem_loop(seq, 5, 5, 1, 0)
-    except SeqTooShortException:
-        got_exception = True
-
-    if not got_exception:
-        print "%s: Failed to trigger exception on too short sequence" % name
-        return False
+    assert_raises(SeqTooShortException, find_stem_loop, seq, 5, 5, 1, 0)
 
     seq = "CCCAACUUCCC"
+
+    # find 3-base "(.)" loop ACU
     results = find_stem_loop(seq, 1, 1, 0, 0)
-
-    if len(results) != 1:
-        print "%s: looking for stem loop ACU failed" % name
-        return False
+    ok_(len(results) == 1, "looking for stem loop ACU failed")
 
     res = results[0]
-    if res != (4,7, 'ACU'):
-        print "%s: stem loop ACU at wrong position. Expected (4,7, 'ACU'), got %s" % (name, res)
-        return False
+    assert_equal(res, (4,7, 'ACU'), "stem loop ACU at wrong position.")
 
+    # find 5-base "(...)" loop AACUU
     results = find_stem_loop(seq, 1, 3, 0, 0)
-
-    if len(results) != 1:
-        print "%s: looking for stem loop AACUU failed" % name
-        return False
+    ok_(len(results) == 1, "looking for stem loop AACUU failed")
 
     res = results[0]
-    if res != (3,8, 'AACUU'):
-        print "%s: stem loop AACUU at wrong position. Expected (3, 8, 'AACUU'), got %s" % (name, res)
-        return False
+    assert_equal(res, (3,8, 'AACUU'), "stem loop AACUU at wrong position.")
 
+    # find 5-base "((.))" loop AACUU
     results = find_stem_loop(seq, 2, 1, 0, 0)
-
-    if len(results) != 1:
-        print "%s: looking for stem loop AACUU failed" % name
-        return False
+    ok_(len(results) == 1, "looking for stem loop AACUU failed")
 
     res = results[0]
-    if res != (3, 8, 'AACUU'):
-        print "%s: stem loop AACUU at wrong position. Expected (3, 8, 'AACUU'), got %s" % (name, res)
-        return False
+    assert_equal(res, (3, 8, 'AACUU'), "stem loop AACUU at wrong position")
 
+    # find 6-base "((..))" loop CCAUGG, where U is a loop fuzz
     seq = "AAACCAAGGAAA"
     results = find_stem_loop(seq, 2, 1, 1, 0)
 
-    if len(results) != 1:
-        print "%s: looking for stem loop CCAUGG failed, found %s loops" % (name, len(results))
-        for res in results:
-            print res
-        return False
+    ok_(len(results) == 1, "looking for stem loop CCAAGG failed")
 
     res = results[0]
-    if res != (3, 9, 'CCAAGG'):
-        print "%s: stem loop 'CCAAGG' at wrong position. Expected (3, 9, 'CCAAGG'), got %s" % (name, res)
-        return False
+    assert_equal(res, (3, 9, 'CCAAGG'),
+                 "stem loop 'CCAAGG' at wrong position.")
 
+    # find 16-base "(((((......)))))" loop UUCAACAGUGUUUGAA
     seq = "GUUCUUGCUUCAACAGUGUUUGAACGGAAC"
     results = find_stem_loop(seq, 5, 5, 1, 0)
 
-    if len(results) != 1:
-        print "%s: looking for stem loop 'UUCAACAGUGUUUGAA' failed: found %s loops" % (name, len(results))
-        return False
+    ok_(len(results) == 1, "looking for stem loop 'UUCAACAGUGUUUGAA' failed")
 
     res = results[0]
-    if res != (8, 24, 'UUCAACAGUGUUUGAA'):
-        print "%s: stem loop 'UUCAACAGUGUUUGAA' at wrong position. Expected (8, 24, 'UUCAACAGUGUUUGAA'), got %s" % (name, res)
-        return False
+    assert_equal(res, (8, 24, 'UUCAACAGUGUUUGAA'),
+                 "stem loop 'UUCAACAGUGUUUGAA' at wrong position.")
+
+    ###
+    ### More complex test cases
+    ###
 
     #             Match without extra base            Match with extra base
     #                1         2         3         4         5         6         7
@@ -159,71 +133,27 @@ def test_find_stem_loop(name):
     seq +="XXXXXXXXXXCGAGGCGAGAGGCCUUCXXXXXXXXXXXXXXXXXXXXCCGCGCCAGCGGCGGGCXXXXXX"
 
     positions = [(11,  27,  'AAGUUCAGUGAGCUUU'),
-             (46,  62,  'AGGCUCAGUGCAGCUU'),
-             (151, 167, 'UUCAACAGUGUUUGAA'),
-             (221, 237, 'UUCAGGAGAGCCUGAA'),
-             (258, 274, 'AACUAUAGUACUGGUU'),
-             (361, 377, 'GAGGCGAGAGGCCUUC'),
-             (397, 413, 'CCGCGCCAGCGGCGGG'),
-             (398, 414, 'CGCGCCAGCGGCGGGC')]
+                 (46,  62,  'AGGCUCAGUGCAGCUU'),
+                 (151, 167, 'UUCAACAGUGUUUGAA'),
+                 (221, 237, 'UUCAGGAGAGCCUGAA'),
+                 (258, 274, 'AACUAUAGUACUGGUU'),
+                 (361, 377, 'GAGGCGAGAGGCCUUC'),
+                 (397, 413, 'CCGCGCCAGCGGCGGG'),
+                 (398, 414, 'CGCGCCAGCGGCGGGC')]
 
+    # find 16-base loops without mismatches
     results = find_stem_loop(seq, 5, 5, 1, 0)
 
-    if len(results) != 6:
-        print "%s: Found %s stem loops with 0 mismatches, expected 6" % (name, len(results))
-        for r in results:
-            print r
-        return False
+    ok_(len(results) == 6, "Did not find 6 stem loops")
 
     for r in results:
-        if not r in positions:
-            print "%s: found unknown match %s" % (name, r)
-            return False
+        ok_(r in positions, "found unknown match")
 
+
+    # find 16-base loops with one or less mismatches
     results = find_stem_loop(seq, 5, 5, 1, 1)
 
-    if len(results) != 8:
-        print "%s: Found %s stem loops with 1 mismatch, expected 8" % (name, len(results))
-        for r in results:
-            print r
-        return False
+    ok_(len(results) == 8, "Did not find 8 stem loops with < 2 mismatches")
 
     for r in results:
-        if not r in positions:
-            print "%s: found unknown match %s" % (name, r)
-            return False
-
-    return True
-
-###############################################################################
-def testit(test_fun, name):
-    global successes
-    global failures
-    global total
-
-    print "\nTesting %s" % name
-    total += 1
-    if test_fun(name):
-        print "SUCCESS: %s" % name
-        successes += 1
-    else:
-        print "FAILED: %s" % name
-        failures += 1
-
-def knownfail(test_fun, name):
-    global successes
-    global failures
-    global total
-
-    print "\nTesting %s" % name
-    total += 1
-    if test_fun(name):
-        print "FAILED: %s unexpected success" % name
-        failures += 1
-    else:
-        print "SUCCES: %s failed as expected" % name
-        successes += 1
-
-if __name__ == "__main__":
-    testit(test_can_pair, "RNA pairing")
-    testit(test_find_stem_loop, "Stem loop detection")
+        ok_(r in positions, "found unknown match")
