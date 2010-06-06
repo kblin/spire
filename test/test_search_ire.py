@@ -17,6 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import sys
+sys.path.append('.')
+sys.path.append('..')
 from search_ire import *
 
 successes = 0
