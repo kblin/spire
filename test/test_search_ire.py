@@ -109,15 +109,8 @@ def test_find_cds_features():
     # FIXME: Implement this test
     pass
 
-def test_is_upstream():
-    # FIXME: Implement this test
-    pass
 
-def test_is_downstream():
-    # FIXME: Implement this test
-    pass
-
-def test_is_within():
+def test_is_same_position():
     # FIXME: Implement this test
     pass
 
