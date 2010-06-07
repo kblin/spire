@@ -417,15 +417,17 @@ def filter_utr(match_list):
 def create_pretty_fold_grap(match_list):
     """Create a fold graph by running RNAfold"""
     for match in match_list:
-        pipe_in, pipe_out = os.popen2("RNAfold -noPS")
+        pipe = subprocess.Popen("RNAfold -noPS", shell=True,
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
         try:
-            pipe_in.write(match.sequence)
-            pipe_in.close()
-            lines = pipe_out.readlines()
+            pipe.stdin.write(match.sequence)
+            pipe.stdin.close()
+            lines = pipe.stdout.readlines()
             match.match_graph = lines[1].rstrip()
         finally:
-            pipe_in.close()
-            pipe_out.close()
+            pipe.stdin.close()
+            pipe.stdout.close()
 
 def run_blastn(match, blastdb):
     """run blastn"""
