@@ -309,8 +309,7 @@ def set_position(match, feature, direction):
             f_match.position = "upstream of"
         match.features.append(f_match)
     elif match.start() > feature.start() and match.end() < feature.end():
-        # We currently don't want matches within a gene.
-        #match.features.append(FeatureMatch(feature, 0, "within"))
+        match.features.append(FeatureMatch(feature, 0, "within"))
         return
     else:
         return
