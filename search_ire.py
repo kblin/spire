@@ -94,12 +94,13 @@ class FeatureMatch:
         """End of the FeatureMatch"""
         return self.feature.end()
     def __str__(self):
-        return self.qualifiers['locus_tag'][0]
+        return self.qualifiers.has_key('gene') and self.qualifiers['gene'][0] \
+               or self.qualifiers['note'][0]
     def feature_fasta(self):
         """Print a FASTA version of the feature's RNA sequence"""
         ret = ""
         ret = ">"
-        ret += "%s" % self.qualifiers['locus_tag'][0]
+        ret += "%s" % self.__str__()
         if self.qualifiers.has_key('protein_id'):
             ret += "|%s" % self.qualifiers['protein_id'][0]
         else:
@@ -118,7 +119,7 @@ class FeatureMatch:
         """Print a FASTA version of the feature's protein sequence"""
         ret = ""
         ret = ">"
-        ret += "%s" % self.qualifiers['locus_tag'][0]
+        ret += "%s" % self.__str__()
         if self.qualifiers.has_key('protein_id'):
             ret += "|%s" % self.qualifiers['protein_id'][0]
         else:
@@ -197,9 +198,10 @@ class Match:
             ret += "%s (%s)" % (product, protein_id)
             ret += "\n\tDistance: %s" % feature.dist
             ret += "\n\tPosition: %s..%s" % (feature.start(), feature.end())
-            ret += "\n\tURL: http://www.ncbi.nlm.nih.gov/sites/entrez?"
-            ret += "db=gene&cmd=search&term="
-            ret += feature.qualifiers["locus_tag"][0]
+            if feature.qualifiers.has_key('locus_tag'):
+                ret += "\n\tURL: http://www.ncbi.nlm.nih.gov/sites/entrez?"
+                ret += "db=gene&cmd=search&term="
+                ret += feature.qualifiers["locus_tag"][0]
             ret += "\n\tAlignments: %s protein-based, %s rna-based" % \
                     (len(feature.p_align), len(feature.n_align))
             count = 0
