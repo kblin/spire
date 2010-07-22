@@ -31,6 +31,7 @@ import sys
 import subprocess
 from Bio import SeqIO
 from Bio.Seq import Seq
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.Alphabet import IUPAC
 from Bio.Blast import NCBIXML
 
@@ -556,13 +557,14 @@ def main(argv):
     reverse_pattern = re.compile(REVERSE_PATTERN)
 
     seq_str = ""
-    for seq_i in seq_iterator:
-        # Find our pattern in the genome
-        seq_str = seq_i.seq.transcribe().tostring()
-        forward_matches = find_matches(seq_str, forward_pattern, FORWARD)
-        reverse_matches = find_matches(seq_str, reverse_pattern, REVERSE)
+    seq_i = seq_iterator.next()
 
-        cds_list = find_cds_features(seq_i, seq_str)
+    # Find our pattern in the genome
+    seq_str = seq_i.seq.transcribe().tostring()
+    forward_matches = find_matches(seq_str, forward_pattern, FORWARD)
+    reverse_matches = find_matches(seq_str, reverse_pattern, REVERSE)
+
+    cds_list = find_cds_features(seq_i, seq_str)
 
     matches = forward_matches
     matches.extend(reverse_matches)
@@ -592,6 +594,17 @@ def main(argv):
     elif mode == "n":
         for hit in matches:
             print "%s" % hit.fasta_format()
+    elif mode == "e":
+        for hit in matches:
+            note = "IRE motif, loop sequence %s" % hit.sequence[11:16]
+            feature = SeqFeature(FeatureLocation(hit.start(), hit.end()),
+                                 strand=hit.direction, type="misc_feature",
+                                 qualifiers={'note':note})
+            seq_i.features.append(feature)
+
+        out_handle = open("spire_%s" % genome_file, 'w')
+        SeqIO.write([seq_i], out_handle, "genbank")
+        out_handle.close()
     else:
         for hit in matches:
             print "%s" % hit
