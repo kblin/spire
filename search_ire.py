@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 #
 # SIRE - Search Prokaryote IRE sequences
 # Copyright (C) 2008-2010 Kai Blin <kai.blin@biotech.uni-tuebingen.de>
