@@ -94,8 +94,12 @@ class FeatureMatch:
         """End of the FeatureMatch"""
         return self.feature.end()
     def __str__(self):
-        return self.qualifiers.has_key('gene') and self.qualifiers['gene'][0] \
-               or self.qualifiers['note'][0]
+        if self.qualifiers.has_key('locus_tag'):
+            return self.qualifiers['locus_tag'][0]
+        elif self.qualifiers.has_key('gene'):
+            return self.qualifiers['gene'][0]
+        else:
+            return self.qualifiers['note'][0]
     def feature_fasta(self):
         """Print a FASTA version of the feature's RNA sequence"""
         ret = ""
