@@ -595,7 +595,7 @@ def main(argv):
             print "%s" % hit.protein_fasta()
     elif mode == "n":
         for hit in matches:
-            print "%s" % hit.fasta_format()
+            print "%s" % hit
     elif mode == "e":
         for hit in matches:
             note = "IRE motif, loop sequence %s" % hit.sequence[11:16]
