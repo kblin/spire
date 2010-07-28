@@ -581,9 +581,10 @@ def main(argv):
     matches = filter_utr(matches)
     print "Found %s matches in UTRs" % len(matches)
     print >> sys.stderr, "%s UTR matches, now running blast" % len(matches)
-    blast(matches, blastdb)
-    matches = filter_align(matches)
-    print "Found %s matches with alignments with %s" % (len(matches), blastdb)
+    if blastdb != "none":
+        blast(matches, blastdb)
+        matches = filter_align(matches)
+        print "Found %s matches with alignments with %s" % (len(matches), blastdb)
     matches = filter_real_protein(matches)
     print "Found %s matches after filtering hypothetical proteins" % \
           len(matches)
