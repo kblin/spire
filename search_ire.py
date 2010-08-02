@@ -175,6 +175,9 @@ class Match:
     def end(self):
         """end of the match"""
         return self.re_match.span()[1]
+    def get_loop(self):
+        """get the loop match"""
+        return self.sequence[11:16]
     def get_before(self):
         """get stem before the loop match"""
         return self.sequence[6:11]
@@ -543,6 +546,22 @@ def filter_real_protein(match_list):
             matches.append(match)
     return matches
 
+
+def calculate_stats(matches):
+    """Calculate stats for the different loop sequences"""
+    stats = {}
+    for hit in matches:
+        loop = hit.get_loop()
+        if stats.has_key(loop):
+            stats[loop] += 1
+        else:
+            stats[loop] = 1
+
+    print >> sys.stderr, "Statistics:\nLoop seq\tcount\n--------\t-----"
+    for key in sorted(stats.keys()):
+        print "%s\t\t%s" % (key, stats[key])
+
+
 def main(argv):
     """search prokaryote IRE sequences on a genome"""
     mode = ""
@@ -611,6 +630,8 @@ def main(argv):
         out_handle = open("spire_%s" % genome_file, 'w')
         SeqIO.write([seq_i], out_handle, "genbank")
         out_handle.close()
+    elif mode == "s":
+        calculate_stats(matches)
     else:
         for hit in matches:
             print "%s" % hit
