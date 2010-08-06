@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SIRE - Search Prokaryote IRE sequences
+# SPIRE - Search Prokaryote IRE sequences
 # Copyright (C) 2008-2010 Kai Blin <kai.blin@biotech.uni-tuebingen.de>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@ from Bio.Seq import Seq
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.Alphabet import IUPAC
 from Bio.Blast import NCBIXML
+from optparse import OptionParser
 
 FORWARD_PATTERN = '(C|A).....(CAGUG|CAAUG|GAGAG|UAGUA|CAGCG|CUGUG)'
 REVERSE_PATTERN = '(CACAG|CACUG|CAUUG|CUCUC|UACUA|CGCUG).....(G|U)'
@@ -564,17 +565,36 @@ def calculate_stats(matches):
 
 def main(argv):
     """search prokaryote IRE sequences on a genome"""
-    mode = ""
-    if len(argv) > 2:
-        genome_file = argv[1]
-        blastdb = argv[2]
-    else:
-        print "Usage: %s <GENBANK FILE> <blast database name>" % argv[0]
-        sys.exit(1)
-    if len(argv) > 3:
-        mode = argv[3]
+    usage = "Usage: %prog [options] <genebank file>"
+    parser = OptionParser(usage=usage, version="%prog 0.2.0")
+    parser.add_option("-n", "--nucleotide", dest="nucleotide",
+                      action="store_true", default=False,
+                      help="print nucleotide-based match information")
+    parser.add_option("-p", "--protein", dest="protein",
+                      action="store_true", default=False,
+                      help="print protein fasta sequence of match")
+    parser.add_option("-g", "--genbank", dest="genbank",
+                      action="store_true", default=False,
+                      help="write results into an embl file")
+    parser.add_option("-d", "--database", dest="blastdb",
+                      metavar="DB", default="none",
+                      help="blast database to use, use 'none' to skip blast")
+    parser.add_option("-F", "--fold-rna", dest="fold_rna",
+                      action="store_true", default=False,
+                      help="create RNA fold graphs using RNAFold")
+    parser.add_option("-s", "--stats", dest="stats",
+                      action="store_true", default=False,
+                      help="print statistics on the found IRE sequences")
+    parser.add_option("-H", "--filter-hypothetical", dest="filter_hypothetical",
+                      action="store_true", default=False,
+                      help="Ignore IRE hits in hypothetical proteins")
 
-    handle = open(genome_file)
+    opts, args = parser.parse_args()
+    if len(args) < 1:
+        parser.error("Please specify a GenBank file")
+
+
+    handle = open(args[0])
     seq_iterator = SeqIO.parse(handle, "genbank")
 
     forward_pattern = re.compile(FORWARD_PATTERN)
@@ -603,23 +623,27 @@ def main(argv):
     print >> sys.stderr, "Running UTR filter"
     matches = filter_utr(matches)
     print "Found %s matches in UTRs" % len(matches)
-    print >> sys.stderr, "%s UTR matches, now running blast" % len(matches)
-    if blastdb != "none":
-        blast(matches, blastdb)
+    print >> sys.stderr, "%s UTR matches" % len(matches)
+    if opts.blastdb != "none":
+        blast(matches, opts.blastdb)
         matches = filter_align(matches)
-        print "Found %s matches with alignments with %s" % (len(matches), blastdb)
-    matches = filter_real_protein(matches)
-    print "Found %s matches after filtering hypothetical proteins" % \
-          len(matches)
-    print >> sys.stderr, "Creating RNAFold graphs"
-    create_pretty_fold_grap(matches)
-    if mode == "p":
-        for hit in matches:
-            print "%s" % hit.protein_fasta()
-    elif mode == "n":
+        print "Found %s matches with alignments with %s" % \
+              (len(matches), blastdb)
+    if opts.filter_hypothetical:
+        matches = filter_real_protein(matches)
+        print "Found %s matches after filtering hypothetical proteins" % \
+              len(matches)
+    if opts.fold_rna:
+        print >> sys.stderr, "Creating RNAFold graphs"
+        create_pretty_fold_grap(matches)
+
+    if opts.nucleotide:
         for hit in matches:
             print "%s" % hit
-    elif mode == "e":
+    if opts.protein:
+        for hit in matches:
+            print "%s" % hit.protein_fasta()
+    if opts.genbank:
         for hit in matches:
             note = "IRE motif, loop sequence %s" % hit.sequence[11:16]
             feature = SeqFeature(FeatureLocation(hit.start(), hit.end()),
@@ -630,14 +654,8 @@ def main(argv):
         out_handle = open("spire_%s" % genome_file, 'w')
         SeqIO.write([seq_i], out_handle, "genbank")
         out_handle.close()
-    elif mode == "s":
+    if opts.stats:
         calculate_stats(matches)
-    else:
-        for hit in matches:
-            print "%s" % hit
-        print "### SNIP ###"
-        for hit in matches:
-            print "%s" % hit.protein_fasta()
 
     handle.close()
 
