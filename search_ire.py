@@ -42,7 +42,7 @@ FORWARD = 1
 REVERSE = -1
 UTR_LEN = 200
 E_VAL_THRESH = 0.04
-MAX_ALN_RESULTS = 3
+MAX_ALN_RESULTS = 6
 
 def reverse_complement(sequence):
     """Get the reverse complement of an RNA seqence string"""
