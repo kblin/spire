@@ -458,7 +458,7 @@ def run_blastn(match, blastdb):
             pipe.stdout.close()
             pipe.stderr.close()
         except OSError, err:
-            print >> sys.stderr, "Failed to run blastp: %s" % err
+            print >> sys.stderr, "Failed to run blastn: %s" % err
             continue
         except ValueError, err:
             print >> sys.stderr, "Parsing blast output failed: %s" % err
@@ -509,9 +509,19 @@ def run_blastp(match, blastdb):
 
 def blast(match_list, blastdb):
     """run blast searches"""
+    import os.path
+    blastn = run_blastn
+    blastp = run_blastp
+    if not os.path.isfile("%s.nin" % blastdb):
+        print >> sys.stderr, "blastn database not found, skipping blastn"
+        blastn = lambda x, y: None
+    if not os.path.isfile("%s.pin" % blastdb):
+        print >> sys.stderr, "blastp database not found, skipping blastp"
+        blastp = lambda x, y: None
+
     for match in match_list:
-        run_blastn(match, blastdb)
-        run_blastp(match, blastdb)
+        blastn(match, blastdb)
+        blastp(match, blastdb)
 
 def filter_align(match_list):
     """filter out matches that don't have an alignment to other genomes"""
