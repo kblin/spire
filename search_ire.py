@@ -628,7 +628,7 @@ def main(argv):
         blast(matches, opts.blastdb)
         matches = filter_align(matches)
         print "Found %s matches with alignments with %s" % \
-              (len(matches), blastdb)
+              (len(matches), opts.blastdb)
     if opts.filter_hypothetical:
         matches = filter_real_protein(matches)
         print "Found %s matches after filtering hypothetical proteins" % \
