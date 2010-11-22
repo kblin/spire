@@ -588,6 +588,9 @@ def main(argv):
     parser.add_option("-H", "--filter-hypothetical", dest="filter_hypothetical",
                       action="store_true", default=False,
                       help="Ignore IRE hits in hypothetical proteins")
+    parser.add_option("-t", "--text", dest="text",
+                      action="store_true", default=False,
+                      help="Print textual information")
 
     opts, args = parser.parse_args()
     if len(args) < 1:
@@ -656,6 +659,9 @@ def main(argv):
         out_handle.close()
     if opts.stats:
         calculate_stats(matches)
+    if opts.text:
+        for hit in matches:
+            print hit
 
     handle.close()
 
