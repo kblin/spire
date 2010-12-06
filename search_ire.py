@@ -166,25 +166,41 @@ class Match:
             self.sequence = reverse_complement(sequence)
         else:
             self.sequence = sequence
-        self.match_graph = None
+        self.fold_graph = None
+        self.two_d_fold_graph = None
         self.direction = direction
         self.features = []
         self.position = 0
+        self.before_start = 6
+        self.loop_start = 11
+        self.loop_length = 5
+
     def start(self):
         """start of the match"""
         return self.re_match.span()[0]
+
     def end(self):
         """end of the match"""
         return self.re_match.span()[1]
+
     def get_loop(self):
         """get the loop match"""
-        return self.sequence[11:16]
+        start = self.loop_start
+        end   = start + 5
+        return self.sequence[start:end]
+
     def get_before(self):
         """get stem before the loop match"""
-        return self.sequence[6:11]
+        start = self.before_start
+        end = start + 5
+        return self.sequence[start:end]
+
     def get_after(self):
         """get stem after the loop match"""
-        return self.sequence[16:22]
+        start = self.loop_start + self.loop_length
+        end = start + 6
+        return self.sequence[start:end]
+
     def __str__(self):
         ret = "Match at (%s:%s)" % (self.start(), self.end())
         ret += "\n\tDirection: "
@@ -193,8 +209,8 @@ class Match:
         else:
             ret += "reverse"
         ret += "\n\tSequence: %s" % self.sequence
-        if self.match_graph is not None:
-            ret += "\n\tFolds to: %s" % self.match_graph
+        if self.fold_graph is not None:
+            ret += "\n\tFolds to:      %s" %  self.fold_graph
         for feature in self.features:
             ret += "\n\tFeature: %s " % feature.position
             product = "unknown product"
@@ -355,6 +371,10 @@ def filter_fold(match_list):
         # account
         stem_before = match.get_before()
         stem_after = match.get_after()
+        graph_before = ""
+        graph_after = ""
+        graph_loop = "....."
+        six_base_loop =False
 
         does_pair = False
         mismatches = 0
@@ -373,17 +393,28 @@ def filter_fold(match_list):
             # We allow one mismatch total
             if not does_pair:
                 mismatches += 1
+                graph_after += "."
+                graph_before = "." + graph_before
+            else:
+                graph_after += ")"
+                graph_before = "(" + graph_before
             # We allow a mismatch at the first base after the loop
             if offset ==  0 and mismatches > 1:
                 offset = 1
                 i = 0
                 mismatches = 0
+                graph_loop += "."
+                graph_before = ""
+                graph_after  = ""
+                six_base_loop = True
                 continue
 
             i += 1
             if mismatches > 1:
                 break
         if mismatches < 2:
+            match.fold_graph = "." + graph_before + graph_loop + graph_after
+            match.six_base_loop = six_base_loop
             stem_loops.append(match)
 
     return stem_loops
@@ -426,18 +457,7 @@ def filter_utr(match_list):
 
 def create_pretty_fold_grap(match_list):
     """Create a fold graph by running RNAfold"""
-    for match in match_list:
-        pipe = subprocess.Popen("RNAfold -noPS", shell=True,
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
-        try:
-            pipe.stdin.write(match.sequence)
-            pipe.stdin.close()
-            lines = pipe.stdout.readlines()
-            match.match_graph = lines[1].rstrip()
-        finally:
-            pipe.stdin.close()
-            pipe.stdout.close()
+    return match_list
 
 def run_blastn(match, blastdb):
     """run blastn"""
@@ -646,9 +666,7 @@ def main(argv):
         matches = filter_real_protein(matches)
         print "Found %s matches after filtering hypothetical proteins" % \
               len(matches)
-    if opts.fold_rna:
-        print >> sys.stderr, "Creating RNAFold graphs"
-        create_pretty_fold_grap(matches)
+    create_pretty_fold_grap(matches)
 
     if opts.nucleotide:
         for hit in matches:

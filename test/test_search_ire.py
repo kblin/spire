@@ -43,12 +43,14 @@ def test_match():
     seq = "XXXXXCNNNNNCAGUGYMMMMZXXXXX"
     before = "NNNNN"
     after =  "YMMMMZ"
+    loop =   "CAGUG"
     direction = FORWARD
     m = Match(FakeReMatch(start, end), seq, direction)
 
     assert_equal(m.start(), start)
     assert_equal(m.end(), end)
     assert_equal(m.get_before(), before)
+    assert_equal(m.get_loop(), loop)
     assert_equal(m.get_after(), after)
 
 def test_find_matches():
@@ -194,5 +196,12 @@ def test_filter_UTR():
     pass
 
 def test_create_pretty_fold_graph():
-    # FIXME: Implement this test
-    pass
+    forward_pattern = re.compile(FORWARD_PATTERN)
+    seq = "CCACGUAACUCGAGGCGAGAGGCCUUCGACGUGGCA"
+    exp =           ".(((((.....)))))"
+    matches = find_matches(seq, forward_pattern, FORWARD)
+    assert_equal(len(matches), 1)
+    assert_equal(matches[0].fold_graph, None)
+    matches = filter_fold(matches)
+    ok_(matches[0].fold_graph != None)
+    assert_equal(matches[0].fold_graph, exp)
