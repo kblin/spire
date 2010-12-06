@@ -695,6 +695,8 @@ def main(argv):
     if opts.text:
         for hit in matches:
             print hit
+            if opts.fold_rna:
+                print hit.two_d_fold_graph
 
     handle.close()
 

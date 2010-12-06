@@ -205,3 +205,17 @@ def test_create_pretty_fold_graph():
     matches = filter_fold(matches)
     ok_(matches[0].fold_graph != None)
     assert_equal(matches[0].fold_graph, exp)
+    pretty_fold_expected = """
+     G
+  A     A
+ G       G
+   C - G
+   G - C
+   G - C
+   A - U
+   G - U
+ C
+   U   C
+"""
+    matches = create_pretty_fold_grap(matches)
+    assert_equal(matches[0].two_d_fold_graph, pretty_fold_expected)
