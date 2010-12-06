@@ -231,6 +231,7 @@ class Match:
             count = 0
             for align in feature.p_align:
                 if not is_same_position(feature, align):
+                    ret += "\n\t\t[hit not in the same UTR]"
                     continue
                 if not count < MAX_ALN_RESULTS:
                     ret += "\n\t\t..."
@@ -314,7 +315,7 @@ def find_cds_features(seq_item, sequence):
             cds_list.append(CDS(feature, sequence))
     return cds_list
 
-def set_position(match, feature, direction):
+def set_position(match, feature, direction, hits_within_genes):
     """create FeatureMatch instance for a match close to a feature"""
     if match.end() < feature.start() and \
        feature.start() - match.end() < UTR_LEN:
@@ -332,7 +333,8 @@ def set_position(match, feature, direction):
         else:
             f_match.position = "upstream of"
         match.features.append(f_match)
-    elif match.start() > feature.start() and match.end() < feature.end():
+    elif hits_within_genes and ( match.start() > feature.start() and
+                                 match.end() < feature.end()):
         match.features.append(FeatureMatch(feature, 0, "within"))
         return
     else:
@@ -437,7 +439,7 @@ def find_close_features(match, cds_list):
 
     return cds_list[start:i+5]
 
-def annotate_with_cds(match_list, cds_list):
+def annotate_with_cds(match_list, cds_list, hits_within_genes=False):
     """Annotate features with nearby CDS"""
     for match in match_list:
         close_features = find_close_features(match, cds_list)
@@ -445,7 +447,7 @@ def annotate_with_cds(match_list, cds_list):
             # do a binary search for close features
             if match.direction != feature.strand:
                 continue
-            set_position(match, feature, feature.strand)
+            set_position(match, feature, feature.strand, hits_within_genes)
 
 def filter_utr(match_list):
     """Filter out matches not in the 5' or 3' UTR"""
@@ -621,6 +623,9 @@ def main(argv):
     parser.add_option("-t", "--text", dest="text",
                       action="store_true", default=False,
                       help="Print textual information")
+    parser.add_option("-w", "--wighin-genes", dest="hits_within_genes",
+                      action="store_true", default=False,
+                      help="allow hits within genes, not only in UTRs")
 
     opts, args = parser.parse_args()
     if len(args) < 1:
@@ -651,7 +656,7 @@ def main(argv):
 
     matches = filter_fold(matches)
     print >> sys.stderr, "Found %s stem loops" % len(matches)
-    annotate_with_cds(matches, cds_list)
+    annotate_with_cds(matches, cds_list, opts.hits_within_genes)
     print "Found %s stem loops" % len(matches)
     print >> sys.stderr, "Running UTR filter"
     matches = filter_utr(matches)
