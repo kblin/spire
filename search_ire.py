@@ -160,6 +160,14 @@ def is_same_position(feature_match, alignment):
         return True
     return False
 
+def is_same_gene(feature_match, alignment):
+    """Check if the locus tag of the feature is the same as the one from the alignment"""
+    pattern = re.compile(feature_match.__str__())
+    match = pattern.search(alignment.title)
+    if match is None:
+        return False
+    return True
+
 class Match:
     """datatype for an IRE match"""
     def __init__(self, re_match, sequence, direction):
@@ -234,7 +242,9 @@ class Match:
             count = 0
             for align in feature.p_align:
                 if not is_same_position(feature, align):
-                    ret += "\n\t\t[hit not in the same UTR]"
+                    #ret += "\n\t\t[hit not in the same UTR]"
+                    continue
+                if is_same_gene(feature, align):
                     continue
                 if not count < MAX_ALN_RESULTS:
                     ret += "\n\t\t..."
@@ -251,6 +261,8 @@ class Match:
             for align in feature.n_align:
                 if not is_same_position(feature, align):
                     continue
+                if is_same_gene(feature, align):
+                        continue
                 if not count < MAX_ALN_RESULTS:
                     ret += "\n\t\t..."
                     break
