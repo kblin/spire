@@ -547,7 +547,8 @@ def run_blastp(match, blastdb):
 def blast(match_list, blastdb):
     """run blast searches"""
     import os.path
-    blastn = run_blastn
+    #blastn = run_blastn
+    blastn = lambda x, y: None
     blastp = run_blastp
     if not os.path.isfile("%s.nin" % blastdb):
         print >> sys.stderr, "blastn database not found, skipping blastn"
