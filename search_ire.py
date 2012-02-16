@@ -122,6 +122,9 @@ class FeatureMatch:
         return ret
     def protein_fasta(self):
         """Print a FASTA version of the feature's protein sequence"""
+        if not self.qualifiers.has_key('translation'):
+            print >>sys.stderr, "no translation for %s" % self.__str__()
+            return ""
         ret = ""
         ret = ">"
         ret += "%s" % self.__str__()
