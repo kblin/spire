@@ -691,7 +691,7 @@ def main(argv):
 
     if opts.nucleotide:
         for hit in matches:
-            print "%s" % hit
+            print "%s" % hit.feature_fasta()
     if opts.protein:
         for hit in matches:
             print "%s" % hit.protein_fasta()
