@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # SPIRE - Search Prokaryote IRE sequences
-# Copyright (C) 2008-2010 Kai Blin <kai.blin@biotech.uni-tuebingen.de>
+# Copyright (C) 2008-2012 Kai Blin <kai.blin@biotech.uni-tuebingen.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -596,6 +596,47 @@ def filter_real_protein(match_list):
     return matches
 
 
+def filter_for_self_matches(match_list):
+    """only keep matches that have a similar stem loop to another match"""
+    from Levenshtein import distance
+
+    hits_by_loop = {}
+    for hit in match_list:
+        loop = hit.get_loop()
+        if hits_by_loop.has_key(loop):
+            hits_by_loop[loop].append(hit)
+        else:
+            hits_by_loop[loop] = [hit]
+
+    new_matches = []
+
+    for key in hits_by_loop.keys():
+        num_seqs = len(hits_by_loop[key])
+        print "Found %s sequences with loop %r" % (num_seqs, key)
+        loop_hits = hits_by_loop[key]
+        for i in range(0, num_seqs - 1):
+            for j in range(i + 1, num_seqs):
+                first = "%s%s%s" % (loop_hits[i].get_before(),
+                                    loop_hits[i].get_loop(),
+                                    loop_hits[i].get_after())
+                second = "%s%s%s" % (loop_hits[j].get_before(),
+                                     loop_hits[j].get_loop(),
+                                     loop_hits[j].get_after())
+                dist = distance(first, second)
+                if dist < 2:
+                    if not loop_hits[i] in new_matches:
+                        new_matches.append(loop_hits[i])
+                    if not loop_hits[j] in new_matches:
+                        new_matches.append(loop_hits[j])
+                    print "%r(%s:%s) <-> %r(%s:%s): %s" % (first,
+                                loop_hits[i].start(), loop_hits[i].end(),
+                                second,
+                                loop_hits[j].start(), loop_hits[j].end(),
+                                dist)
+
+    return new_matches
+
+
 def calculate_stats(matches):
     """Calculate stats for the different loop sequences"""
     stats = {}
@@ -642,6 +683,10 @@ def main(argv):
     parser.add_option("-w", "--wighin-genes", dest="hits_within_genes",
                       action="store_true", default=False,
                       help="allow hits within genes, not only in UTRs")
+    parser.add_option("-S", "--self-hits", dest="self_hits",
+                      action="store_true", default=False,
+                      help="Display only IRE hits that have similar IREs "\
+                           "on the same genome")
 
     opts, args = parser.parse_args()
     if len(args) < 1:
@@ -687,6 +732,12 @@ def main(argv):
         matches = filter_real_protein(matches)
         print "Found %s matches after filtering hypothetical proteins" % \
               len(matches)
+
+    if opts.self_hits:
+        matches = filter_for_self_matches(matches)
+        print "Found %s matches after filtering for self-matches" % \
+              len(matches)
+
     create_pretty_fold_grap(matches)
 
     if opts.nucleotide:
