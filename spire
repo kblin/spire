@@ -85,7 +85,7 @@ def main(argv):
                       help="print protein fasta sequence of match")
     parser.add_option("-g", "--genbank", dest="genbank",
                       action="store_true", default=False,
-                      help="write results into an embl file")
+                      help="write results into a GenBank file")
     parser.add_option("-d", "--database", dest="blastdb",
                       metavar="DB", default="none",
                       help="blast database to use, use 'none' to skip blast")
@@ -101,7 +101,7 @@ def main(argv):
     parser.add_option("-t", "--text", dest="text",
                       action="store_true", default=False,
                       help="Print textual information")
-    parser.add_option("-w", "--wighin-genes", dest="hits_within_genes",
+    parser.add_option("-w", "--within-genes", dest="hits_within_genes",
                       action="store_true", default=False,
                       help="allow hits within genes, not only in UTRs")
     parser.add_option("-S", "--self-hits", dest="self_hits",
