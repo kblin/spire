@@ -28,10 +28,9 @@ Output will go to stdout, with some diagnostics printed to stderr.
 
 import sys
 import logging
-from Bio import SeqIO
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-
 from optparse import OptionParser
+from helperlibs.bio import seqio
 from helperlibs.bio.ire import (
         find_cds_features,
         annotate_with_cds,
@@ -125,7 +124,7 @@ def main(argv):
 
     # Load sequence
     handle = open(args[0])
-    seq_iterator = SeqIO.parse(handle, "genbank")
+    seq_iterator = seqio.parse(handle)
     seq_i = seq_iterator.next()
     seq = seq_i.seq.transcribe()
 
@@ -150,7 +149,7 @@ def main(argv):
             seq_i.features.append(feature)
 
         out_handle = open("spire_%s" % args[0], 'w')
-        SeqIO.write([seq_i], out_handle, "genbank")
+        seqio.write([seq_i], out_handle, "genbank")
         out_handle.close()
     if opts.stats:
         calculate_stats(matches)
