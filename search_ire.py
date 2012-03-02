@@ -30,9 +30,7 @@ import re
 import sys
 import subprocess
 from Bio import SeqIO
-from Bio.Seq import Seq
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-from Bio.Alphabet import IUPAC
 from Bio.Blast import NCBIXML
 from optparse import OptionParser
 
@@ -43,11 +41,6 @@ REVERSE = -1
 UTR_LEN = 200
 E_VAL_THRESH = 0.04
 MAX_ALN_RESULTS = 6
-
-def reverse_complement(sequence):
-    """Get the reverse complement of an RNA seqence string"""
-    seq = Seq(sequence, IUPAC.unambiguous_rna)
-    return seq.reverse_complement().tostring()
 
 def get_best_hsp(alignment):
     """Return the best HSP of an alignment"""
@@ -70,7 +63,7 @@ class CDS:
         self.mrna = seq_str[feature.location.nofuzzy_start-UTR_LEN:\
                             feature.location.nofuzzy_end+UTR_LEN]
         if self.strand == REVERSE:
-            self.mrna = reverse_complement(self.mrna)
+            self.mrna = self.mrna.reverse_complement()
     def start(self):
         """get the start of the CDS"""
         return self.location.nofuzzy_start
@@ -174,7 +167,7 @@ class Match:
         """initialize IRE match"""
         self.re_match = re_match
         if direction == REVERSE:
-            self.sequence = reverse_complement(sequence)
+            self.sequence = sequence.reverse_complement()
         else:
             self.sequence = sequence
         self.fold_graph = None
@@ -307,7 +300,7 @@ class Match:
 def find_matches(sequence, search_pattern, direction):
     """find IRE regex matches on a sequence"""
     match_list = []
-    itr = search_pattern.finditer(sequence)
+    itr = search_pattern.finditer(str(sequence))
     for i in itr:
         offset_d = 5
         offset_u = 10
@@ -699,15 +692,14 @@ def main(argv):
     forward_pattern = re.compile(FORWARD_PATTERN)
     reverse_pattern = re.compile(REVERSE_PATTERN)
 
-    seq_str = ""
     seq_i = seq_iterator.next()
 
     # Find our pattern in the genome
-    seq_str = seq_i.seq.transcribe().tostring()
-    forward_matches = find_matches(seq_str, forward_pattern, FORWARD)
-    reverse_matches = find_matches(seq_str, reverse_pattern, REVERSE)
+    seq = seq_i.seq.transcribe()
+    forward_matches = find_matches(seq, forward_pattern, FORWARD)
+    reverse_matches = find_matches(seq, reverse_pattern, REVERSE)
 
-    cds_list = find_cds_features(seq_i, seq_str)
+    cds_list = find_cds_features(seq_i, seq)
 
     matches = forward_matches
     matches.extend(reverse_matches)
