@@ -754,7 +754,7 @@ def main(argv):
                                  qualifiers={'note':note})
             seq_i.features.append(feature)
 
-        out_handle = open("spire_%s" % genome_file, 'w')
+        out_handle = open("spire_%s" % args[0], 'w')
         SeqIO.write([seq_i], out_handle, "genbank")
         out_handle.close()
     if opts.stats:
