@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+#
+# aphid - Walk an RNA sequence looking for IRE stem loops
+# Copyright (C) 2008-2012 Kai Blin <kai.blin@biotech.uni-tuebingen.de>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+"""aphid - Walk an RNA sequence looking for IRE stem loops
+
+automatic processor handling ire detection
+"""
+
+import argparse
+import logging
+from helperlibs.bio import seqio
+from helperlibs.bio.ire import Match, filter_fold, FORWARD, REVERSE
+
+class IterMatch(Match):
+    """helperlibs.bio.ire -like Match object that works for non-regex matches"""
+
+    def __init__(self, sequence, direction, start, end):
+        super(IterMatch, self).__init__(None, sequence, direction)
+        self._start = start
+        self._end = end
+        # override the parent loop start offset
+        self.loop_start = 6
+
+    def start(self):
+        return self._start
+
+    def end(self):
+        return self._end
+
+def create_iterative_matches(sequence):
+    matches = []
+    for i in range(0, len(sequence)-17):
+        matches.append(IterMatch(sequence[i:i+17], FORWARD, i+6, i+11))
+        matches.append(IterMatch(sequence[i:i+17], REVERSE, i+6, i+11))
+    return matches
+
+def main():
+    parser = argparse.ArgumentParser(
+                description='Walk an RNA sequence looking for IRE stem loops.')
+    parser.add_argument('-v', '--verbose', dest="verbose",
+                        action='store_true', default=False,
+                        help="print diagnostic messages while running")
+    parser.add_argument('infile', metavar="<sequence file>",
+                        help="sequence file to operate on (FASTA/GenBank/EMBL)")
+    args = parser.parse_args()
+
+    if args.verbose:
+        logging.basicConfig(format='%(levelname)s: %(message)s',
+                            level=logging.INFO)
+
+    with open(args.infile) as handle:
+        seq_iterator = seqio.parse(handle)
+        seq_i = seq_iterator.next()
+        seq = seq_i.seq.transcribe()
+
+    matches = create_iterative_matches(seq)
+    logging.info("Sequence split into %s iterative matches" % len(matches))
+    matches = filter_fold(matches)
+    logging.info("Found %s possible stem loops" % len(matches))
+
+    for match in matches:
+        print match
+
+if __name__ == "__main__":
+    main()
