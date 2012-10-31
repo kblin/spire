@@ -34,6 +34,12 @@ def main():
                         help="print diagnostic messages while running")
     parser.add_argument('infile', metavar="<sequence file>",
                         help="sequence file to operate on (FASTA/GenBank/EMBL)")
+    parser.add_argument('-e', '--extract', dest="extract",
+                        action='store_true', default=False,
+                        help="extract a 50-base RNA stretch for ordering")
+    parser.add_argument('-f', '--forward-only', dest="forward_only",
+                        action='store_true', default=False,
+                        help="only consider forward matches")
     args = parser.parse_args()
 
     if args.verbose:
@@ -45,11 +51,15 @@ def main():
         seq_i = seq_iterator.next()
         seq = seq_i.seq.transcribe()
 
-    matches = process_sequence(seq)
+    matches = process_sequence(seq, args.forward_only)
     matches = filter_fold(matches)
 
     for match in matches:
-        print match
+        if args.extract:
+            print ">(%s:%s)" % (match.start(), match.end())
+            print seq[match.start()-16:match.end()+23]
+        else:
+            print match
 
 if __name__ == "__main__":
     main()
