@@ -40,6 +40,9 @@ from ire import (
         filter_utr,
         filter_real_protein,
         filter_for_self_matches,
+        filter_same_loop_sequence,
+        filter_same_position,
+        filter_downstream_only,
         calculate_stats,
         process_sequence,
     )
@@ -57,6 +60,9 @@ def filter_matches(matches, cds_list, opts):
     logging.info("%s UTR matches" % len(matches))
     if opts.blastdb != "none":
         blast(matches, opts.blastdb)
+        matches = filter_same_loop_sequence(matches)
+        matches = filter_same_position(matches)
+        matches = filter_downstream_only(matches)
         matches = filter_align(matches)
         print "Found %s matches with alignments with %s" % \
               (len(matches), opts.blastdb)
