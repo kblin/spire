@@ -42,11 +42,12 @@ class IterMatch(Match):
     def end(self):
         return self._end
 
-def create_iterative_matches(sequence):
+def create_iterative_matches(sequence, include_reverse=False):
     matches = []
     for i in range(0, len(sequence)-17):
         matches.append(IterMatch(sequence[i:i+17], FORWARD, i+6, i+11))
-        matches.append(IterMatch(sequence[i:i+17], REVERSE, i+6, i+11))
+        if include_reverse:
+            matches.append(IterMatch(sequence[i:i+17], REVERSE, i+6, i+11))
     return matches
 
 def main():
@@ -57,6 +58,9 @@ def main():
                         help="print diagnostic messages while running")
     parser.add_argument('infile', metavar="<sequence file>",
                         help="sequence file to operate on (FASTA/GenBank/EMBL)")
+    parser.add_argument('-r', '--reverse', dest="include_reverse",
+                        action='store_true', default=False,
+                        help="include reverse strand in stem-loop search")
     args = parser.parse_args()
 
     if args.verbose:
@@ -68,7 +72,7 @@ def main():
         seq_i = seq_iterator.next()
         seq = seq_i.seq.transcribe()
 
-    matches = create_iterative_matches(seq)
+    matches = create_iterative_matches(seq, args.include_reverse)
     logging.info("Sequence split into %s iterative matches" % len(matches))
     matches = filter_fold(matches)
     logging.info("Found %s possible stem loops" % len(matches))
