@@ -31,7 +31,7 @@ import logging
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from optparse import OptionParser
 from helperlibs.bio import seqio
-from helperlibs.bio.ire import (
+from ire import (
         find_cds_features,
         annotate_with_cds,
         filter_fold,

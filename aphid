@@ -24,10 +24,10 @@ automatic processor handling ire detection
 import argparse
 import logging
 from helperlibs.bio import seqio
-from helperlibs.bio.ire import Match, filter_fold, FORWARD, REVERSE
+from ire import Match, filter_fold, FORWARD, REVERSE
 
 class IterMatch(Match):
-    """helperlibs.bio.ire -like Match object that works for non-regex matches"""
+    """ire -like Match object that works for non-regex matches"""
 
     def __init__(self, sequence, direction, start, end):
         super(IterMatch, self).__init__(None, sequence, direction)

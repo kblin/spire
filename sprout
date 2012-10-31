@@ -24,7 +24,7 @@ Search for IRE sequences by sequence pattern and folding.
 import argparse
 import logging
 from helperlibs.bio import seqio
-from helperlibs.bio.ire import process_sequence, filter_fold
+from ire import process_sequence, filter_fold
 
 def main():
     parser = argparse.ArgumentParser(
